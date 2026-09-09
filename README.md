@@ -1,20 +1,37 @@
 # DC Live
 
-Static viewer front end for DC Live.
+Viewer front end for DC Live, deployed through Cloudflare Pages.
 
-This repository is intentionally separated from `dc-live-backend`, which contains the Cloudflare Worker API, D1 database integration, R2 media handling, viewer auth, payments, entitlements, and protected playback.
+The backend remains isolated in `redavi19-asu/dc-live-backend` and owns the Cloudflare Worker API, D1 data, R2 media, viewer auth, Stripe checkout, entitlements, and protected playback.
 
-## GitHub Pages
+## Frontend → backend connection
 
-Every push to `main` runs the Pages deployment workflow.
+Set the Worker origin once in `config.js`:
 
-Expected Pages URL:
+```js
+window.DC_LIVE_CONFIG = {
+  apiBase: "https://dc-live-api.<your-workers-dev-subdomain>.workers.dev"
+};
+```
 
-`https://redavi19-asu.github.io/dc-live/`
+The frontend is already wired to:
 
-## Structure
+- `GET /health`
+- `GET /api/events`
+- `GET /api/events/:slug`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `GET /api/library`
+- `POST /api/events/:slug/checkout`
+- `POST /api/events/:slug/playback`
+- protected `/media/...` playback URLs
 
-- `index.html` — viewer landing page
-- `styles.css` — responsive visual design
-- `app.js` — front-end behavior
-- `.github/workflows/pages.yml` — GitHub Pages deployment
+For temporary testing, open the Pages site once with `?api=https://YOUR-WORKER-URL`; the value is stored locally and the query string is removed.
+
+## Deployment
+
+Cloudflare Pages should deploy the `main` branch of this repository.
+
+The backend currently allows the front-end origin `https://dc-live.pages.dev` through `APP_ORIGIN`.
