@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dc-live-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "APP_ORIGIN": "https://dc-live.pages.dev",
+    "MEDIA_ORIGIN": "https://live.icomputeranything.com",
+    "SESSION_HOURS": "720",
+    "PLAYBACK_TOKEN_MINUTES": "240"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dc-live-db",
+      "database_id": "dc0350b6-0529-4ab2-aea5-726cab0df911",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "dc-live-media"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": { "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  }
+}
