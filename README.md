@@ -1,26 +1,20 @@
-# DC Live backend
+# DC Live
 
-Separate Cloudflare backend for DC Live events, payments, rentals, entitlements, and protected playback.
+Static viewer front end for DC Live.
 
-## Secrets
+This repository is intentionally separated from `dc-live-backend`, which contains the Cloudflare Worker API, D1 database integration, R2 media handling, viewer auth, payments, entitlements, and protected playback.
 
-Set these with `wrangler secret put`:
+## GitHub Pages
 
-- `ADMIN_API_KEY`
-- `PLAYBACK_SIGNING_KEY`
-- `STRIPE_SECRET_KEY` (test key until launch)
-- `STRIPE_WEBHOOK_SECRET` (test endpoint until launch)
+Every push to `main` runs the Pages deployment workflow.
 
-Never commit secret values. Stripe Checkout stays unavailable until its two secrets are configured.
+Expected Pages URL:
 
-## Commands
+`https://redavi19-asu.github.io/dc-live/`
 
-```sh
-npm install
-npm run types
-npm run check
-npx wrangler d1 migrations apply dc-live-db --remote
-npm run deploy
-```
+## Structure
 
-The public API supports event listings, viewer registration/login, Stripe Checkout, entitlement checks, protected HLS proxying, and R2-backed artwork. Administrative event and artwork routes require `X-Admin-Key`.
+- `index.html` — viewer landing page
+- `styles.css` — responsive visual design
+- `app.js` — front-end behavior
+- `.github/workflows/pages.yml` — GitHub Pages deployment
