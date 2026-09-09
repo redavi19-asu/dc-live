@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#050505" />
+  <meta name="description" content="DC Live — live events, broadcasts, rentals, and protected playback." />
+  <title>DC Live</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="DC Live home">
+      <span class="live-dot"></span>
+      <span>DC LIVE</span>
+    </a>
+    <nav>
+      <a href="#events">Events</a>
+      <a href="#how">How it works</a>
+      <a href="#about">About</a>
+    </nav>
+    <a class="ghost-button" href="#events">Watch now</a>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">LIVE EVENTS • DMV • ON DEMAND</div>
+        <h1>DC<br><span>LIVE</span></h1>
+        <p class="hero-lede">Watch live events, rent protected replays, and access broadcasts from one clean viewer experience.</p>
+        <div class="hero-actions">
+          <a class="primary-button" href="#events">Browse events</a>
+          <a class="text-link" href="#how">See how it works →</a>
+        </div>
+        <div class="hero-meta">
+          <div><strong>LIVE</strong><span>Broadcast access</span></div>
+          <div><strong>RENT</strong><span>Protected playback</span></div>
+          <div><strong>WATCH</strong><span>Phone, tablet, desktop</span></div>
+        </div>
+      </div>
+
+      <div class="hero-stage">
+        <div class="stage-glow"></div>
+        <div class="screen-card">
+          <div class="screen-topbar">
+            <span class="status-pill"><i></i> LIVE SIGNAL</span>
+            <span>DC LIVE PLAYER</span>
+          </div>
+          <div class="screen-visual">
+            <div class="play-ring">▶</div>
+            <div class="screen-caption">
+              <span>FEATURED BROADCAST</span>
+              <strong>Washington, DC</strong>
+            </div>
+          </div>
+          <div class="screen-footer">
+            <span>Protected stream</span>
+            <span>Viewer access ready</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="events" class="events-section">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">NOW & NEXT</span>
+          <h2>Featured events</h2>
+        </div>
+        <span class="section-note">The live backend can plug into this grid when the API is connected.</span>
+      </div>
+
+      <div id="event-grid" class="event-grid"></div>
+    </section>
+
+    <section id="how" class="how-section">
+      <div class="eyebrow">SIMPLE VIEWER FLOW</div>
+      <div class="steps">
+        <article><span>01</span><h3>Choose an event</h3><p>Open a live or upcoming event and review its access type.</p></article>
+        <article><span>02</span><h3>Unlock access</h3><p>Sign in, register, or complete rental checkout when required.</p></article>
+        <article><span>03</span><h3>Watch securely</h3><p>Protected playback keeps the stream inside the DC Live viewer experience.</p></article>
+      </div>
+    </section>
+
+    <section id="about" class="about-section">
+      <div>
+        <span class="eyebrow">BUILT FOR LIVE MEDIA</span>
+        <h2>One front door for events and broadcasts.</h2>
+      </div>
+      <p>DC Live is being separated cleanly into a static viewer front end and a dedicated Cloudflare backend for accounts, event data, payments, entitlements, media, and protected playback.</p>
+    </section>
+  </main>
+
+  <footer>
+    <span>© 2026 DC Live</span>
+    <span>Built by I Computer Anything</span>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
