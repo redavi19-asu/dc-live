@@ -1,4 +1,0 @@
-ADMIN_API_KEY="create-a-long-random-secret"
-PLAYBACK_SIGNING_KEY="create-a-different-long-random-secret"
-STRIPE_SECRET_KEY="sk_test_from_your_stripe_dashboard"
-STRIPE_WEBHOOK_SECRET="whsec_from_your_stripe_webhook"
