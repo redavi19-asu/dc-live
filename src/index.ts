@@ -97,7 +97,7 @@ async function hmacHex(secret: string, value: string): Promise<string> {
 async function passwordHash(password: string, salt: string): Promise<string> {
   const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: base64UrlToBytes(salt), iterations: 210_000 },
+    { name: "PBKDF2", hash: "SHA-256", salt: base64UrlToBytes(salt), iterations: 100_000 },
     key,
     256
   );
@@ -165,8 +165,13 @@ async function register(request: Request, env: Env): Promise<Response> {
     await env.DB.prepare(
       "INSERT INTO users (id,email,password_hash,password_salt,created_at) VALUES (?,?,?,?,?)"
     ).bind(id, email, await passwordHash(password, salt), salt, Date.now()).run();
-  } catch {
-    return json(env, request, { error: "An account already exists for that email." }, 409);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("UNIQUE constraint failed")) {
+      return json(env, request, { error: "An account already exists for that email." }, 409);
+    }
+    console.error(JSON.stringify({ message: "viewer registration failed", error: message }));
+    return json(env, request, { error: "Viewer registration could not be completed." }, 500);
   }
   return createSession(request, env, { id, email, role: "viewer" });
 }
