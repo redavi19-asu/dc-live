@@ -97,11 +97,16 @@
         <input id="auth-password" type="password" autocomplete="current-password" placeholder="Password" minlength="10" required />
         <button class="primary-button form-button" type="submit" id="auth-submit">Sign in</button>
       </form>
+      <div id="master-turnstile-wrap" hidden>
+        <div id="master-turnstile"></div>
+      </div>
       <p id="auth-message" class="form-message"></p>
       <button id="auth-toggle" class="text-button" type="button">Need an account? Register</button>
+      <button id="master-auth-toggle" class="master-login-button" type="button">ICA MASTER OWNER</button>
     </div>
   </div>
 
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   <script src="./config.js"></script>
   <script src="./app.js"></script>
 </body>
