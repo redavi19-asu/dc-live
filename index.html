@@ -13,17 +13,14 @@
 </head>
 <body>
   <div class="noise"></div>
+
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="DC Live home">
-      <span class="live-dot"></span>
-      <span>DC LIVE</span>
-    </a>
-    <nav>
-      <a href="#events">Events</a>
-      <a href="#how">How it works</a>
-      <a href="#about">About</a>
-    </nav>
-    <a class="ghost-button" href="#events">Watch now</a>
+    <a class="brand" href="#top" aria-label="DC Live home"><span class="live-dot"></span><span>DC LIVE</span></a>
+    <nav><a href="#events">Events</a><a href="#library">My library</a><a href="#how">How it works</a></nav>
+    <div class="header-actions">
+      <span id="api-status" class="api-status">API CHECK</span>
+      <button id="account-button" class="ghost-button" type="button">Sign in</button>
+    </div>
   </header>
 
   <main id="top">
@@ -31,15 +28,15 @@
       <div class="hero-copy">
         <div class="eyebrow">LIVE EVENTS • DMV • ON DEMAND</div>
         <h1>DC<br><span>LIVE</span></h1>
-        <p class="hero-lede">Watch live events, rent protected replays, and access broadcasts from one clean viewer experience.</p>
+        <p class="hero-lede">Watch live events, unlock protected replays, and keep purchased access in your viewer library.</p>
         <div class="hero-actions">
           <a class="primary-button" href="#events">Browse events</a>
-          <a class="text-link" href="#how">See how it works →</a>
+          <button class="text-button" id="library-button" type="button">My library →</button>
         </div>
         <div class="hero-meta">
           <div><strong>LIVE</strong><span>Broadcast access</span></div>
-          <div><strong>RENT</strong><span>Protected playback</span></div>
-          <div><strong>WATCH</strong><span>Phone, tablet, desktop</span></div>
+          <div><strong>RENT</strong><span>Secure checkout</span></div>
+          <div><strong>WATCH</strong><span>Protected playback</span></div>
         </div>
       </div>
 
@@ -47,59 +44,65 @@
         <div class="stage-glow"></div>
         <div class="screen-card">
           <div class="screen-topbar">
-            <span class="status-pill"><i></i> LIVE SIGNAL</span>
+            <span class="status-pill"><i></i> <span id="player-state">VIEWER READY</span></span>
             <span>DC LIVE PLAYER</span>
           </div>
-          <div class="screen-visual">
-            <div class="play-ring">▶</div>
-            <div class="screen-caption">
-              <span>FEATURED BROADCAST</span>
-              <strong>Washington, DC</strong>
+          <div class="screen-visual" id="player-shell">
+            <video id="video-player" controls playsinline hidden></video>
+            <div id="player-placeholder">
+              <div class="play-ring">▶</div>
+              <div class="screen-caption"><span>SELECT AN EVENT</span><strong>Washington, DC</strong></div>
             </div>
           </div>
-          <div class="screen-footer">
-            <span>Protected stream</span>
-            <span>Viewer access ready</span>
-          </div>
+          <div class="screen-footer"><span id="player-title">Protected stream</span><span id="viewer-state">Guest viewer</span></div>
         </div>
       </div>
     </section>
 
     <section id="events" class="events-section">
       <div class="section-heading">
-        <div>
-          <span class="eyebrow">NOW & NEXT</span>
-          <h2>Featured events</h2>
-        </div>
-        <span class="section-note">The live backend can plug into this grid when the API is connected.</span>
+        <div><span class="eyebrow">NOW & NEXT</span><h2>Events</h2></div>
+        <span id="events-note" class="section-note">Loading DC Live events…</span>
       </div>
-
       <div id="event-grid" class="event-grid"></div>
+    </section>
+
+    <section id="library" class="events-section library-section">
+      <div class="section-heading">
+        <div><span class="eyebrow">YOUR ACCESS</span><h2>My library</h2></div>
+        <span id="library-note" class="section-note">Sign in to see purchased or rented events.</span>
+      </div>
+      <div id="library-grid" class="event-grid"></div>
     </section>
 
     <section id="how" class="how-section">
       <div class="eyebrow">SIMPLE VIEWER FLOW</div>
       <div class="steps">
-        <article><span>01</span><h3>Choose an event</h3><p>Open a live or upcoming event and review its access type.</p></article>
-        <article><span>02</span><h3>Unlock access</h3><p>Sign in, register, or complete rental checkout when required.</p></article>
-        <article><span>03</span><h3>Watch securely</h3><p>Protected playback keeps the stream inside the DC Live viewer experience.</p></article>
+        <article><span>01</span><h3>Choose an event</h3><p>DC Live loads public event data directly from the Cloudflare backend.</p></article>
+        <article><span>02</span><h3>Unlock access</h3><p>Register, sign in, and use secure Stripe checkout when an event requires payment.</p></article>
+        <article><span>03</span><h3>Watch securely</h3><p>The backend verifies entitlement before issuing protected playback access.</p></article>
       </div>
-    </section>
-
-    <section id="about" class="about-section">
-      <div>
-        <span class="eyebrow">BUILT FOR LIVE MEDIA</span>
-        <h2>One front door for events and broadcasts.</h2>
-      </div>
-      <p>DC Live is being separated cleanly into a static viewer front end and a dedicated Cloudflare backend for accounts, event data, payments, entitlements, media, and protected playback.</p>
     </section>
   </main>
 
-  <footer>
-    <span>© 2026 DC Live</span>
-    <span>Built by I Computer Anything</span>
-  </footer>
+  <footer><span>© 2026 DC Live</span><span>Built by I Computer Anything</span></footer>
 
+  <div id="auth-modal" class="modal" hidden>
+    <div class="modal-card">
+      <button id="close-auth" class="modal-close" type="button" aria-label="Close">×</button>
+      <span class="eyebrow">VIEWER ACCOUNT</span>
+      <h2 id="auth-title">Sign in</h2>
+      <form id="auth-form">
+        <input id="auth-email" type="email" autocomplete="email" placeholder="Email address" required />
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="Password" minlength="10" required />
+        <button class="primary-button form-button" type="submit" id="auth-submit">Sign in</button>
+      </form>
+      <p id="auth-message" class="form-message"></p>
+      <button id="auth-toggle" class="text-button" type="button">Need an account? Register</button>
+    </div>
+  </div>
+
+  <script src="./config.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>
