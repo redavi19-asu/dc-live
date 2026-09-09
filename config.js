@@ -1,5 +1,5 @@
 window.DC_LIVE_CONFIG = {
-  apiBase: ""
+  apiBase: "https://dc-live-api.ryanedavis.workers.dev"
 };
 
 (() => {
