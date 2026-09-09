@@ -2,7 +2,7 @@ const configuredApi = String(window.DC_LIVE_CONFIG?.apiBase || "").replace(/\/+$
 const storedApi = String(localStorage.getItem("dcLiveApiBase") || "").replace(/\/+$/, "");
 const API_BASE = storedApi || configuredApi;
 
-const state = { user: null, events: [], library: [], authMode: "login" };
+const state = { user: null, events: [], library: [], authMode: "login", masterTurnstileToken: "", masterWidgetId: null };
 
 const $ = selector => document.querySelector(selector);
 const apiStatus = $("#api-status");
@@ -16,6 +16,8 @@ const authTitle = $("#auth-title");
 const authSubmit = $("#auth-submit");
 const authToggle = $("#auth-toggle");
 const authMessage = $("#auth-message");
+const masterAuthToggle = $("#master-auth-toggle");
+const masterTurnstileWrap = $("#master-turnstile-wrap");
 
 function apiUrl(path) {
   return API_BASE ? API_BASE + path : path;
@@ -72,8 +74,8 @@ function renderLibrary() {
 }
 
 function updateAccountUI() {
-  accountButton.textContent = state.user ? state.user.email : "Sign in";
-  $("#viewer-state").textContent = state.user ? "Signed in" : "Guest viewer";
+  accountButton.textContent = state.user ? (state.user.role === "owner" ? "ICA MASTER" : state.user.email) : "Sign in";
+  $("#viewer-state").textContent = state.user ? (state.user.role === "owner" ? "Owner session" : "Signed in") : "Guest viewer";
   libraryNote.textContent = state.user ? "Your active event access appears here." : "Sign in to see purchased or rented events.";
 }
 
@@ -128,13 +130,45 @@ async function loadLibrary() {
   }
 }
 
+function renderMasterTurnstile() {
+  state.masterTurnstileToken = "";
+  if (!window.turnstile) {
+    setTimeout(renderMasterTurnstile, 250);
+    return;
+  }
+  const node = $("#master-turnstile");
+  if (!node) return;
+  if (state.masterWidgetId !== null) {
+    try { window.turnstile.remove(state.masterWidgetId); } catch {}
+  }
+  state.masterWidgetId = window.turnstile.render(node, {
+    sitekey: "0x4AAAAAAErtQB79-xi-UTHQ",
+    theme: "dark",
+    action: "ica_master_login",
+    callback: token => { state.masterTurnstileToken = token || ""; authMessage.textContent = ""; },
+    "expired-callback": () => { state.masterTurnstileToken = ""; },
+    "error-callback": () => { state.masterTurnstileToken = ""; authMessage.textContent = "Cloudflare security check failed."; }
+  });
+}
+
 function openAuth(mode = "login") {
   state.authMode = mode;
-  authTitle.textContent = mode === "register" ? "Create account" : "Sign in";
-  authSubmit.textContent = mode === "register" ? "Create account" : "Sign in";
-  authToggle.textContent = mode === "register" ? "Already have an account? Sign in" : "Need an account? Register";
+  const master = mode === "master";
+  authTitle.textContent = master ? "ICA Master Owner" : mode === "register" ? "Create account" : "Sign in";
+  authSubmit.textContent = master ? "Enter as owner" : mode === "register" ? "Create account" : "Sign in";
+  authToggle.hidden = master;
+  masterAuthToggle.hidden = master;
+  masterTurnstileWrap.hidden = !master;
   authMessage.textContent = "";
   modal.hidden = false;
+  if (master) renderMasterTurnstile();
+}
+
+function closeAuth() {
+  modal.hidden = true;
+  authToggle.hidden = false;
+  masterAuthToggle.hidden = false;
+  masterTurnstileWrap.hidden = true;
 }
 
 function closeAuth() { modal.hidden = true; }
@@ -143,10 +177,16 @@ async function authSubmitHandler(event) {
   event.preventDefault();
   authMessage.textContent = "Working…";
   try {
-    const path = state.authMode === "register" ? "/api/auth/register" : "/api/auth/login";
+    const master = state.authMode === "master";
+    if (master && !state.masterTurnstileToken) throw new Error("Complete the Cloudflare security check.");
+    const path = master ? "/api/auth/master-login" : state.authMode === "register" ? "/api/auth/register" : "/api/auth/login";
     const data = await api(path, {
       method: "POST",
-      body: JSON.stringify({ email: $("#auth-email").value.trim(), password: $("#auth-password").value })
+      body: JSON.stringify({
+        email: $("#auth-email").value.trim(),
+        password: $("#auth-password").value,
+        ...(master ? { turnstileToken: state.masterTurnstileToken } : {})
+      })
     });
     state.user = data.user || null;
     closeAuth();
@@ -202,6 +242,7 @@ $("#library-button").addEventListener("click", () => {
 });
 $("#close-auth").addEventListener("click", closeAuth);
 authToggle.addEventListener("click", () => openAuth(state.authMode === "register" ? "login" : "register"));
+masterAuthToggle.addEventListener("click", () => openAuth("master"));
 $("#auth-form").addEventListener("submit", authSubmitHandler);
 modal.addEventListener("click", e => { if (e.target === modal) closeAuth(); });
 document.addEventListener("click", e => {
