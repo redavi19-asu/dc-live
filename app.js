@@ -2,7 +2,18 @@ const configuredApi = String(window.DC_LIVE_CONFIG?.apiBase || "").replace(/\/+$
 const storedApi = String(localStorage.getItem("dcLiveApiBase") || "").replace(/\/+$/, "");
 const API_BASE = storedApi || configuredApi;
 
-const state = { user: null, events: [], library: [], authMode: "login", masterTurnstileToken: "", masterWidgetId: null };
+const state = {
+  user: null,
+  events: [],
+  library: [],
+  authMode: "login",
+  recoveryMode: "none",
+  socialProviders: {},
+  recoveryConfigured: false,
+  resetToken: "",
+  masterTurnstileToken: "",
+  masterWidgetId: null
+};
 
 const $ = selector => document.querySelector(selector);
 const apiStatus = $("#api-status");
@@ -18,6 +29,11 @@ const authToggle = $("#auth-toggle");
 const authMessage = $("#auth-message");
 const masterAuthToggle = $("#master-auth-toggle");
 const masterTurnstileWrap = $("#master-turnstile-wrap");
+const socialAuth = $("#social-auth");
+const forgotPasswordButton = $("#forgot-password-button");
+const recoveryBackButton = $("#recovery-back-button");
+const authPassword = $("#auth-password");
+const authPasswordConfirm = $("#auth-password-confirm");
 
 function apiUrl(path) {
   return API_BASE ? API_BASE + path : path;
@@ -151,32 +167,118 @@ function renderMasterTurnstile() {
   });
 }
 
+function renderSocialButtons() {
+  const available = Object.entries(state.socialProviders).filter(([, enabled]) => Boolean(enabled));
+  document.querySelectorAll("[data-social-provider]").forEach(button => {
+    const provider = button.dataset.socialProvider;
+    button.hidden = !state.socialProviders[provider];
+  });
+  socialAuth.hidden = !available.length || state.authMode === "master" || state.recoveryMode !== "none";
+}
+
+async function loadAccountSupport() {
+  try {
+    const [social, recovery] = await Promise.all([
+      api("/api/auth/social/status"),
+      api("/api/auth/password-reset/status")
+    ]);
+    state.socialProviders = social.providers || {};
+    state.recoveryConfigured = Boolean(recovery.configured);
+  } catch {
+    state.socialProviders = {};
+    state.recoveryConfigured = false;
+  }
+  renderSocialButtons();
+}
+
+function setRecoveryMode(mode, token = "") {
+  state.recoveryMode = mode;
+  if (token) state.resetToken = token;
+
+  const requesting = mode === "request";
+  const resetting = mode === "reset";
+  const active = requesting || resetting;
+
+  authTitle.textContent = requesting ? "Reset password" : resetting ? "Choose a new password" : state.authMode === "register" ? "Create account" : "Sign in";
+  authSubmit.textContent = requesting ? "Send reset link" : resetting ? "Reset password" : state.authMode === "master" ? "Enter as owner" : state.authMode === "register" ? "Create account" : "Sign in";
+
+  $("#auth-email").hidden = resetting;
+  $("#auth-email").required = !resetting;
+  authPassword.hidden = requesting;
+  authPassword.required = !requesting;
+  authPassword.autocomplete = resetting ? "new-password" : state.authMode === "register" ? "new-password" : "current-password";
+  authPasswordConfirm.hidden = !resetting;
+  authPasswordConfirm.required = resetting;
+
+  forgotPasswordButton.hidden = active || state.authMode !== "login" || !state.recoveryConfigured;
+  recoveryBackButton.hidden = !active;
+  authToggle.hidden = active || state.authMode === "master";
+  masterAuthToggle.hidden = active || state.authMode === "master";
+  masterTurnstileWrap.hidden = state.authMode !== "master" || active;
+  renderSocialButtons();
+}
+
 function openAuth(mode = "login") {
   state.authMode = mode;
+  state.recoveryMode = "none";
   const master = mode === "master";
   authTitle.textContent = master ? "ICA Master Owner" : mode === "register" ? "Create account" : "Sign in";
   authSubmit.textContent = master ? "Enter as owner" : mode === "register" ? "Create account" : "Sign in";
+  $("#auth-email").hidden = false;
+  $("#auth-email").required = true;
+  authPassword.hidden = false;
+  authPassword.required = true;
+  authPasswordConfirm.hidden = true;
+  authPasswordConfirm.required = false;
+  forgotPasswordButton.hidden = master || mode !== "login" || !state.recoveryConfigured;
+  recoveryBackButton.hidden = true;
   authToggle.hidden = master;
   masterAuthToggle.hidden = master;
   masterTurnstileWrap.hidden = !master;
   authMessage.textContent = "";
   modal.hidden = false;
+  renderSocialButtons();
   if (master) renderMasterTurnstile();
 }
 
 function closeAuth() {
   modal.hidden = true;
+  state.recoveryMode = "none";
   authToggle.hidden = false;
   masterAuthToggle.hidden = false;
   masterTurnstileWrap.hidden = true;
+  recoveryBackButton.hidden = true;
 }
-
-function closeAuth() { modal.hidden = true; }
 
 async function authSubmitHandler(event) {
   event.preventDefault();
   authMessage.textContent = "Working…";
   try {
+    if (state.recoveryMode === "request") {
+      const data = await api("/api/auth/password-reset/request", {
+        method: "POST",
+        body: JSON.stringify({ email: $("#auth-email").value.trim() })
+      });
+      authMessage.textContent = data.message || "If that account exists, a reset link will be sent.";
+      return;
+    }
+
+    if (state.recoveryMode === "reset") {
+      if (authPassword.value !== authPasswordConfirm.value) throw new Error("The passwords do not match.");
+      const data = await api("/api/auth/password-reset/confirm", {
+        method: "POST",
+        body: JSON.stringify({ token: state.resetToken, password: authPassword.value })
+      });
+      state.resetToken = "";
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+      state.authMode = "login";
+      setRecoveryMode("none");
+      authMessage.textContent = data.message || "Password updated. Sign in with your new password.";
+      authPassword.value = "";
+      authPasswordConfirm.value = "";
+      return;
+    }
+
     const master = state.authMode === "master";
     if (master && !state.masterTurnstileToken) throw new Error("Complete the Cloudflare security check.");
     const path = master ? "/api/auth/master-login" : state.authMode === "register" ? "/api/auth/register" : "/api/auth/login";
@@ -184,7 +286,7 @@ async function authSubmitHandler(event) {
       method: "POST",
       body: JSON.stringify({
         email: $("#auth-email").value.trim(),
-        password: $("#auth-password").value,
+        password: authPassword.value,
         ...(master ? { turnstileToken: state.masterTurnstileToken } : {})
       })
     });
@@ -243,6 +345,22 @@ $("#library-button").addEventListener("click", () => {
 $("#close-auth").addEventListener("click", closeAuth);
 authToggle.addEventListener("click", () => openAuth(state.authMode === "register" ? "login" : "register"));
 masterAuthToggle.addEventListener("click", () => openAuth("master"));
+forgotPasswordButton.addEventListener("click", () => {
+  authMessage.textContent = "";
+  setRecoveryMode("request");
+});
+recoveryBackButton.addEventListener("click", () => {
+  authMessage.textContent = "";
+  state.authMode = "login";
+  setRecoveryMode("none");
+});
+document.querySelectorAll("[data-social-provider]").forEach(button => {
+  button.addEventListener("click", () => {
+    const provider = button.dataset.socialProvider;
+    if (!provider || !state.socialProviders[provider]) return;
+    window.location.assign(apiUrl("/api/auth/social/" + provider + "/start"));
+  });
+});
 $("#auth-form").addEventListener("submit", authSubmitHandler);
 modal.addEventListener("click", e => { if (e.target === modal) closeAuth(); });
 document.addEventListener("click", e => {
@@ -255,6 +373,26 @@ document.addEventListener("click", e => {
   renderLibrary();
   const online = await loadHealth();
   if (!online) return;
+  await loadAccountSupport();
+
+  const params = new URLSearchParams(window.location.search);
+  const resetToken = params.get("reset_token") || "";
+  const socialError = params.get("social_error") || "";
+  const socialProvider = params.get("social") || "";
+
   await loadMe();
+
+  if (resetToken) {
+    openAuth("login");
+    setRecoveryMode("reset", resetToken);
+  } else if (socialError) {
+    openAuth("login");
+    authMessage.textContent = socialError;
+  } else if (socialProvider && state.user) {
+    params.delete("social");
+    const query = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
+  }
+
   await Promise.all([loadEvents(), loadLibrary()]);
 })();

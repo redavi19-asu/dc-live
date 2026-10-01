@@ -6,3 +6,12 @@
 
 .ghost-button{background:rgba(255,255,255,.04);color:#fff;border:1px solid #383838;box-shadow:none;appearance:none;-webkit-appearance:none}
 .ghost-button:hover{background:rgba(255,255,255,.08);border-color:#555}
+
+.social-auth{display:grid;gap:10px;margin:0 0 16px;padding:14px;border:1px solid #292929;border-radius:14px;background:#090909}
+.social-auth>span{font-size:10px;letter-spacing:.14em;color:#777;font-weight:800}
+.social-auth-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.social-auth-buttons button{min-height:42px;border:1px solid #343434;border-radius:11px;background:#151515;color:#fff;font:700 12px Inter,sans-serif;cursor:pointer}
+.social-auth-buttons button:hover{border-color:#ff5c52;background:#1b1110}
+.social-auth small{color:#73736e;line-height:1.45;font-size:11px}
+.auth-secondary{display:block;width:100%;margin-top:10px!important;text-align:center}
+@media(max-width:560px){.social-auth-buttons{grid-template-columns:1fr}}
